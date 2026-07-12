@@ -8,10 +8,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # هذه الخطوة ستعرض لنا "خريطة" للملفات التي يراها السيرفر
-      - name: Debug - List Files
-        run: ls -R
-
       - name: Install Dependencies
         run: |
           sudo apt-get update
@@ -19,6 +15,13 @@ jobs:
 
       - name: Install Buildozer and Cython
         run: pip3 install --user --upgrade buildozer cython
+
+      # الخطوة الحاسمة: الموافقة التلقائية على الرخص
+      - name: Accept Android Licenses
+        run: |
+          mkdir -p ~/.android/licenses
+          echo "8933bad161af4178b1185d1a37fbf41ea5269c55" > ~/.android/licenses/android-sdk-license
+          echo "d56f5187473751e9e9842ee30d9526788b776269" > ~/.android/licenses/android-sdk-preview-license
 
       - name: Build APK
         run: buildozer -v android debug
