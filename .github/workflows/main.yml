@@ -13,20 +13,18 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
+        # قمنا باستبدال libtinfo5 بـ libtinfo6 ليتوافق مع Ubuntu 24.04
+        sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev cmake libffi-dev libssl-dev libtinfo6
 
     - name: Install Buildozer
       run: pip3 install --upgrade buildozer cython virtualenv
 
     - name: Accept Android SDK Licenses
       run: |
-        # إنشاء المجلد اللازم للتراخيص
         mkdir -p ~/.android
         touch ~/.android/repositories.cfg
-        # الموافقة التلقائية على التراخيص (تجاوز مشكلة توقف السجل)
         yes | sdkmanager --licenses || true
       env:
-        # تأكد من أن هذا المسار يطابق المكان الذي يقوم فيه buildozer بتحميل الـ SDK
         ANDROID_HOME: /opt/android/sdk 
 
     - name: Build with Buildozer
