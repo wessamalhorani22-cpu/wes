@@ -1,31 +1,33 @@
-name: Build APK
-on: [push]
+name: Build Android App
+
+on:
+  push:
+    branches: [ main ]
 
 jobs:
   build:
-    # استخدام نسخة 22.04 لأنها الأكثر استقراراً مع أدوات بناء بايثون
-    runs-on: ubuntu-22.04
-
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - uses: actions/checkout@v3
 
-      - name: Install Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev cmake libffi-dev libssl-dev
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
 
-      - name: Install Buildozer and Cython
-        run: |
-          pip3 install --user --upgrade buildozer cython virtualenv
+    - name: Install Buildozer
+      run: pip3 install --upgrade buildozer cython virtualenv
 
-      - name: Build APK (Auto-accept licenses)
-        run: |
-          # أمر 'yes' يرسل حرف الموافقة (y) تلقائياً لأي نافذة ترخيص تظهر
-          yes | buildozer -v android debug
+    - name: Accept Android SDK Licenses
+      run: |
+        # إنشاء المجلد اللازم للتراخيص
+        mkdir -p ~/.android
+        touch ~/.android/repositories.cfg
+        # الموافقة التلقائية على التراخيص (تجاوز مشكلة توقف السجل)
+        yes | sdkmanager --licenses || true
+      env:
+        # تأكد من أن هذا المسار يطابق المكان الذي يقوم فيه buildozer بتحميل الـ SDK
+        ANDROID_HOME: /opt/android/sdk 
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: package
-          path: bin/*.apk
+    - name: Build with Buildozer
+      run: buildozer -v android debug
