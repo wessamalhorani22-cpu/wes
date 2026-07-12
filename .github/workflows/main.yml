@@ -13,7 +13,6 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        # قمنا باستبدال libtinfo5 بـ libtinfo6 ليتوافق مع Ubuntu 24.04
         sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev cmake libffi-dev libssl-dev libtinfo6
 
     - name: Install Buildozer
@@ -28,4 +27,5 @@ jobs:
         ANDROID_HOME: /opt/android/sdk 
 
     - name: Build with Buildozer
-      run: buildozer -v android debug
+      # قمت بإضافة log-level 2 هنا لإظهار التفاصيل الكاملة عند حدوث خطأ
+      run: buildozer -v --log-level 2 android debug
