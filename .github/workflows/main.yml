@@ -8,6 +8,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # هذه الخطوة ستعرض لنا "خريطة" للملفات التي يراها السيرفر
+      - name: Debug - List Files
+        run: ls -R
+
       - name: Install Dependencies
         run: |
           sudo apt-get update
