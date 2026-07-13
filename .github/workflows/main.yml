@@ -13,8 +13,14 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        # تم إزالة libtoolize لأنها مضمنة بالفعل في حزمة libtool
-        sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool m4 pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev cmake libffi-dev libssl-dev libtinfo6
+        # إضافة libtool-bin و automake لضمان توفر الأدوات والماكرو اللازمة
+        sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip autoconf automake libtool libtool-bin m4 pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev cmake libffi-dev libssl-dev libtinfo6
+
+    - name: Initialize libtool
+      # خطوة إضافية لضمان تهيئة الماكرو قبل بدء البناء
+      run: |
+        libtoolize --install --copy --force || true
+        autoreconf --install --force || true
 
     - name: Install Buildozer
       run: pip3 install --upgrade buildozer cython virtualenv
