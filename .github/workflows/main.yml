@@ -27,7 +27,6 @@ jobs:
         yes | sdkmanager --licenses || true
       env:
         ANDROID_HOME: /opt/android/sdk 
-
-    - name: Build with Buildozer
-      # إضافة مستوى سجل 2 للحصول على تفاصيل دقيقة عند حدوث فشل[cite: 2]
-      run: buildozer -v --log-level 2 android debug
+- name: Build with Buildozer
+      # استخدام -vv بدلاً من --log-level 2 لتفعيل الوضع التفصيلي (Verbose) بشكل صحيح
+      run: buildozer -vv android debug
