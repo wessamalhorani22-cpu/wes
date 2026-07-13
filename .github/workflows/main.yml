@@ -18,14 +18,8 @@ jobs:
     - name: Install Buildozer
       run: pip3 install --upgrade buildozer cython virtualenv
 
-    - name: Accept Android SDK Licenses
-      run: |
-        mkdir -p ~/.android
-        touch ~/.android/repositories.cfg
-        yes | sdkmanager --licenses || true
-      env:
-        ANDROID_HOME: /opt/android/sdk 
-
+    # إزالة خطوة sdkmanager لأن buildozer يقوم بتثبيت الـ SDK تلقائياً عند الحاجة
+    
     - name: Build with Buildozer
-      # قمت بإضافة log-level 2 هنا لإظهار التفاصيل الكاملة عند حدوث خطأ
-      run: buildozer -v --log-level 2 android debug
+      # تم تصحيح طريقة كتابة الـ log-level
+      run: buildozer android debug --log-level 2
