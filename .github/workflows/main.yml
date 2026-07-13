@@ -13,8 +13,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        # تم تحديث الحزم لتتوافق مع بيئة Ubuntu الحديثة واستبدال الحزمة المفقودة libtinfo5 بـ libtinfo6
-        sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev cmake libffi-dev libssl-dev libtinfo6
+        sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool libtoolize m4 pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev cmake libffi-dev libssl-dev libtinfo6
 
     - name: Install Buildozer
       run: pip3 install --upgrade buildozer cython virtualenv
@@ -23,11 +22,9 @@ jobs:
       run: |
         mkdir -p ~/.android
         touch ~/.android/repositories.cfg
-        # الموافقة التلقائية على تراخيص Android SDK لتجاوز خطأ التوقف
         yes | sdkmanager --licenses || true
       env:
         ANDROID_HOME: /opt/android/sdk 
 
     - name: Build with Buildozer
-      # تم استخدام -vv لتفعيل الوضع التفصيلي (Verbose) بدلاً من الصيغة التي سببت الخطأ
       run: buildozer -vv android debug
