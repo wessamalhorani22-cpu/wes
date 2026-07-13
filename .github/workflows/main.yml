@@ -13,14 +13,18 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        # إضافة libtool-bin و automake لضمان توفر الأدوات والماكرو اللازمة
         sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip autoconf automake libtool libtool-bin m4 pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev cmake libffi-dev libssl-dev libtinfo6
 
     - name: Initialize libtool
-      # خطوة إضافية لضمان تهيئة الماكرو قبل بدء البناء
       run: |
         libtoolize --install --copy --force || true
-        autoreconf --install --force || true
+        # البحث عن المجلدات التي تحتوي على configure.ac فقط لتجنب الأخطاء
+        for dir in $(find . -name "configure.ac" -type f | xargs dirname); do
+          echo "Running autoreconf in $dir"
+          cd "$dir"
+          autoreconf --install --force || true
+          cd - > /dev/null
+        done
 
     - name: Install Buildozer
       run: pip3 install --upgrade buildozer cython virtualenv
