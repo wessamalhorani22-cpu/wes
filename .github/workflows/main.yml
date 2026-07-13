@@ -13,13 +13,21 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
+        # تم تحديث الحزم لتتوافق مع بيئة Ubuntu الحديثة واستبدال الحزمة المفقودة libtinfo5 بـ libtinfo6[cite: 1]
         sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev cmake libffi-dev libssl-dev libtinfo6
 
     - name: Install Buildozer
       run: pip3 install --upgrade buildozer cython virtualenv
 
-    # إزالة خطوة sdkmanager لأن buildozer يقوم بتثبيت الـ SDK تلقائياً عند الحاجة
-    
+    - name: Accept Android SDK Licenses
+      run: |
+        mkdir -p ~/.android
+        touch ~/.android/repositories.cfg
+        # الموافقة التلقائية على تراخيص Android SDK لتجاوز خطأ التوقف[cite: 2]
+        yes | sdkmanager --licenses || true
+      env:
+        ANDROID_HOME: /opt/android/sdk 
+
     - name: Build with Buildozer
-      # تم تصحيح طريقة كتابة الـ log-level
-      run: buildozer android debug --log-level 2
+      # إضافة مستوى سجل 2 للحصول على تفاصيل دقيقة عند حدوث فشل[cite: 2]
+      run: buildozer -v --log-level 2 android debug
