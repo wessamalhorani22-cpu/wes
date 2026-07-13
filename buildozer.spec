@@ -6,7 +6,7 @@ package.domain = org.tfc
 source.dir = .
 source.include_exts = py,png,jpg,kv,atlas,ttf
 version = 1.0
-requirements = python3,kivy,arabic-reshaper,python-bidi,requests,metaapi-cloud-sdk
+requirements = python3, kivy, python-bidi, arabic-reshaper, requests
 orientation = portrait
 fullscreen = 0
 
