@@ -13,12 +13,12 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip autoconf automake libtool libtool-bin m4 pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev cmake libffi-dev libssl-dev libtinfo6
+        # تم إضافة libltdl-dev لتوفير الماكرو المفقود LT_SYS_SYMBOL_USCORE
+        sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip autoconf automake libtool libtool-bin libltdl-dev m4 pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev cmake libffi-dev libssl-dev libtinfo6
 
     - name: Initialize libtool
       run: |
         libtoolize --install --copy --force || true
-        # البحث عن المجلدات التي تحتوي على configure.ac فقط لتجنب الأخطاء
         for dir in $(find . -name "configure.ac" -type f | xargs dirname); do
           echo "Running autoreconf in $dir"
           cd "$dir"
