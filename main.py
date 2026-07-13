@@ -1,102 +1,135 @@
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
-from kivy.uix.textinput import TextInput
-from kivy.uix.button import Button
+from kivy.uix.gridlayout import GridLayout
+from kivy.uix.scrollview import ScrollView
+from kivy.network.urlrequest import UrlRequest
 from kivy.clock import Clock
-import arabic_reshaper
-from bidi.algorithm import get_display
-import threading
 import time
-import requests
 
-# دالة تشبيك وتعديل اتجاه الحروف العربية
-def ar(text):
-    reshaped = arabic_reshaper.reshape(text)
-    return get_display(reshaped)
+# إعدادات الحساب عبر المزود الرقمي (كمثال للربط المباشر بالإنترنت)
+BROKER_API_URL = "https://api.yourbroker.com/v1" 
+ACCOUNT_TOKEN = "YOUR_LIVE_ACCOUNT_API_TOKEN"
 
-# التعديل الجديد والمهم للهاتف: جعل مسار الخط محلياً بداخل مجلد المشروع
-ARABIC_FONT = "tahoma.ttf"
-
-# --- معلومات الكود الداخلية الثابتة (مخفية داخل البرنامج) ---
-TELEGRAM_BOT_TOKEN = "8447141907:AAFijrY79rPVIY6HaSecaqJs1dHolxm02QM"
-TELEGRAM_CHAT_ID = "1699752198"
-NEWS_API_KEY = "3b1723c6f1bb4634b87593255996d256"
-METAAPI_TOKEN = "ضع_هنا_توكن_METAAPI_الخاص_بك" # ضع التوكن هنا ليعمل الربط السحابي تلقائياً
-
-SYMBOLS = ["US30.ecn", "XAUUSD.ecn", "US100.ecn", "BTCUSD.ecn"]
-
-class TradingApp(App):
-    def build(self):
-        self.is_running = False  # متغير لمعرفة حالة البوت
+class PhoneTraderDashboard(BoxLayout):
+    def __init__(self, **kwargs):
+        super().__init__(orientation='vertical', **kwargs)
+        self.padding = 20
+        self.spacing = 15
         
-        layout = BoxLayout(orientation='vertical', padding=20, spacing=10)
+        # 1. شاشة العنوان والأيقونة
+        self.add_widget(Label(text="🛡️ WES MOBILE TRADER", font_size='22sp', size_hint_y=None, height=50, color=(1, 0.62, 0, 1)))
         
-        # العنوان
-        layout.add_widget(Label(text=ar("روبوت TFC للتداول الآلي"), font_size='22sp', bold=True, font_name=ARABIC_FONT))
+        # 2. بيانات الحساب المالي المباشر على الهاتف
+        self.account_box = GridLayout(cols=3, size_hint_y=None, height=60, spacing=10)
+        self.balance_lbl = Label(text="Balance:\nLoading...", font_size='13sp')
+        self.equity_lbl = Label(text="Equity:\nLoading...", font_size='13sp')
+        self.profit_lbl = Label(text="Profit:\nLoading...", font_size='13sp')
+        self.account_box.add_widget(self.balance_lbl)
+        self.account_box.add_widget(self.equity_lbl)
+        self.account_box.add_widget(self.profit_lbl)
+        self.add_widget(self.account_box)
         
-        # خانات البيانات
-        self.account_input = TextInput(hint_text="Enter MT5 Account Number", multiline=False, font_size='16sp')
-        self.password_input = TextInput(hint_text="Enter Password", multiline=False, password=True, font_size='16sp')
-        self.server_input = TextInput(hint_text="Enter Server (e.g., Broker-Live)", multiline=False, font_size='16sp')
+        # 3. جدول مراقبة السوق (ماذا يقرأ التطبيق الآن)
+        self.market_grid = GridLayout(cols=4, spacing=5, size_hint_y=None, height=140)
+        self.market_grid.add_widget(Label(text="Symbol", bold=True, font_size='12sp'))
+        self.market_grid.add_widget(Label(text="Bid", bold=True, font_size='12sp'))
+        self.market_grid.add_widget(Label(text="Ask", bold=True, font_size='12sp'))
+        self.market_grid.add_widget(Label(text="Signal", bold=True, font_size='12sp'))
         
-        layout.add_widget(self.account_input)
-        layout.add_widget(self.password_input)
-        layout.add_widget(self.server_input)
+        self.symbols = ["US30.ecn", "XAUUSD.ecn", "US100.ecn"]
+        self.ui_symbols = {}
         
-        # زر التشغيل
-        self.btn = Button(text=ar("بدء تشغيل الروبوت"), background_color=(0, 0.7, 0, 1), font_size='18sp', font_name=ARABIC_FONT)
-        self.btn.bind(on_press=self.toggle_bot)
-        layout.add_widget(self.btn)
-        
-        # شاشة عرض الحالة
-        self.status_label = Label(text=ar("الحالة: متوقف حالياً o"), font_name=ARABIC_FONT, font_size='16sp')
-        layout.add_widget(self.status_label)
-        
-        return layout
-
-    def toggle_bot(self, instance):
-        if not self.is_running:
-            # قراءة البيانات المدخلة
-            account = self.account_input.text
-            password = self.password_input.text
-            server = self.server_input.text
+        for sym in self.symbols:
+            s_lbl = Label(text=sym, font_size='12sp')
+            b_lbl = Label(text="0.00", font_size='12sp')
+            a_lbl = Label(text="0.00", font_size='12sp')
+            sig_lbl = Label(text="CHECKING", font_size='12sp', color=(0.6, 0.6, 0.6, 1))
             
-            if not account or not password or not server:
-                self.status_label.text = ar(" X خطأ: يرجى ملء جميع البيانات!")
-                return
+            self.market_grid.add_widget(s_lbl)
+            self.market_grid.add_widget(b_lbl)
+            self.market_grid.add_widget(a_lbl)
+            self.market_grid.add_widget(sig_lbl)
             
-            # تغيير حالة الزر والشاشة
-            self.is_running = True
-            self.btn.text = ar("إيقاف الروبوت")
-            self.btn.background_color = (0.7, 0, 0, 1)
-            self.status_label.text = ar("● جاري الاتصال بالسيرفر وبدء الفحص...")
+            self.ui_symbols[sym] = {"bid": b_lbl, "ask": a_lbl, "signal": sig_lbl}
             
-            # تشغيل "محرك التداول" في خلفية النظام (Thread) منعاً لتجمد التطبيق
-            threading.Thread(target=self.background_trading_engine, args=(account, password, server), daemon=True).start()
+        self.add_widget(self.market_grid)
+        
+        # 4. سجل الصفقات والعمليات الحية (ماذا يفتح البوت الآن)
+        self.add_widget(Label(text="📜 Live Bot Activity (ما يفتحه ويقرأه البوت):", font_size='14sp', size_hint_y=None, height=30, halign='left'))
+        self.scroll = ScrollView()
+        self.log_label = Label(text="Bot Initialized on Android...\nWaiting for market data...", font_size='11sp', size_hint_y=None, halign='left', valign='top', color=(0.2, 0.8, 0.2, 1))
+        self.log_label.bind(texture_size=self.log_label.setter('size'))
+        self.scroll.add_widget(self.log_label)
+        self.add_widget(self.scroll)
+        
+        self.logs = []
+        
+        # مؤقت لتحديث الأسعار وفحص الاستراتيجية كل ثانيتين من الهاتف مباشرة
+        Clock.schedule_interval(self.update_market_data, 2.0)
+
+    def add_log(self, text):
+        timestamp = time.strftime("%H:%M:%S")
+        self.logs.append(f"[{timestamp}] {text}")
+        if len(self.logs) > 15:
+            self.logs.pop(0)
+        self.log_label.text = "\n".join(self.logs)
+
+    def update_market_data(self, dt):
+        """دالة لجلب الأسعار مباشرة من خادم الوسيط عبر الإنترنت"""
+        # كمثال: نقوم بطلب أسعار الرموز مباشرة من الـ API الخاص بشركة التداول
+        for symbol in self.symbols:
+            url = f"{BROKER_API_URL}/rates?symbol={symbol}&token={ACCOUNT_TOKEN}"
+            UrlRequest(url, on_success=lambda req, res, s=symbol: self.on_rates_received(s, res), on_error=self.on_connectivity_error, timeout=2)
+
+    def on_rates_received(self, symbol, result):
+        # هنا يستقبل الهاتف الأسعار ويقوم بتحديث الواجهة فوراً
+        bid = result.get("bid", 0.0)
+        ask = result.get("ask", 0.0)
+        
+        self.ui_symbols[symbol]["bid"].text = f"{bid:.2f}"
+        self.ui_symbols[symbol]["ask"].text = f"{ask:.2f}"
+        
+        # تشغيل معادلة المتوسطات الحسابية (الاستراتيجية) داخل الهاتف
+        self.check_strategy_signals(symbol, result.get("history", []))
+
+    def check_strategy_signals(self, symbol, history_data):
+        """تحليل البيانات التاريخية القادمة للرمز واتخاذ قرار فتح صفقة"""
+        if not history_data:
+            return
+            
+        # حساب إشارة الشراء أو البيع (تبسيط للمتوسطات الحسابية)
+        # إذا تحقق الشرط يقوم الجوال بإرسال أمر فتح صفقة فوراً
+        signal = "WAITING"
+        
+        # مثال افتراضي لإشارة تم رصدها
+        if symbol == "XAUUSD.ecn" and history_data[-1] > history_data[-2]:
+            signal = "BUY"
+            self.ui_symbols[symbol]["signal"].text = "BUY 🟢"
+            self.ui_symbols[symbol]["signal"].color = (0, 1, 0, 1)
+            self.open_mobile_trade(symbol, "BUY")
         else:
-            # إيقاف البوت
-            self.is_running = False
-            self.btn.text = ar("بدء تشغيل الروبوت")
-            self.btn.background_color = (0, 0.7, 0, 1)
-            self.status_label.text = ar("الحالة: متوقف حالياً o")
+            self.ui_symbols[symbol]["signal"].text = "WAITING ⏳"
+            self.ui_symbols[symbol]["signal"].color = (0.6, 0.6, 0.6, 1)
 
-    # --- محرك التداول الذكي يعمل هنا في الخلفية ---
-    def background_trading_engine(self, account, password, server):
-        # إرسال إشعار تليجرام فوري عند التشغيل من التطبيق
-        try:
-            msg = f"🚀 تم تشغيل روبوت الهاتف للحساب: {account} على سيرفر: {server}"
-            requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", data={"chat_id": TELEGRAM_CHAT_ID, "text": msg})
-        except:
-            pass
+    def open_mobile_trade(self, symbol, side):
+        """إرسال أمر فتح صفقة مباشرة من الهاتف إلى خادم شركة التداول"""
+        self.add_log(f"🎯 الاستراتيجية تحققت! جاري فتح صفقة {side} على {symbol}...")
+        
+        trade_url = f"{BROKER_API_URL}/trade"
+        params = json.dumps({"symbol": symbol, "action": side, "volume": 0.01, "token": ACCOUNT_TOKEN})
+        headers = {'Content-type': 'application/json'}
+        
+        UrlRequest(trade_url, req_body=params, req_headers=headers, 
+                   on_success=lambda req, res: self.add_log(f"✅ تم فتح صفقة {side} لرمز {symbol} بنجاح من الجوال!"),
+                   on_failure=lambda req, res: self.add_log(f"❌ فشل تنفيذ الصفقة من السيرفر الرئيسي."))
 
-        while self.is_running:
-            print(f"[الروبوت يعمل سحابياً] جاري فحص الرموز: {SYMBOLS}...")
-            
-            # تحديث واجهة التطبيق بشكل آمن من الخلفية
-            Clock.schedule_once(lambda dt: setattr(self.status_label, 'text', ar("● الروبوت نشط ويقوم بمراقبة السوق الآن...")))
-            
-            time.sleep(3) # الانتظار بين دورات الفحص لحماية موارد الهاتف
+    def on_connectivity_error(self, request, error):
+        self.log_label.text = "⚠️ خطأ في الاتصال بالإنترنت.. جاري المحاولة مجدداً."
+
+class MobileTraderApp(App):
+    def build(self):
+        return PhoneTraderDashboard()
 
 if __name__ == '__main__':
-    TradingApp().run()
+    MobileTraderApp().run()
