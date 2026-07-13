@@ -9,6 +9,8 @@ version = 1.0
 requirements = python3, kivy, python-bidi, arabic-reshaper, requests
 orientation = portrait
 fullscreen = 0
+# (str) Icon of the application
+icon.filename = %(source.dir)s/app_icon.png
 
 # إعدادات الأندرويد
 android.permissions = INTERNET
